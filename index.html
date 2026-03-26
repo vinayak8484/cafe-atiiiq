@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Café Atiq">
+<title>Café Atiq</title>
+<style>
+/* ── RESET & ROOT ── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+
+:root{
+  /* Backgrounds — deep dark red-tinted */
+  --bg:        #130c0c;
+  --surface:   #1e1212;
+  --surface2:  #261717;
+  --surface3:  #2f1e1e;
+
+  /* Primary accent — red */
+  --red:       #c0392b;
+  --red-bright:#e74c3c;
+  --red-dim:   #962d20;
+  --red-active:#a93226;
+
+  /* Borders */
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.13);
+
+  /* Text */
+  --text:      #f0e8e8;
+  --muted:     #7a5f5f;
+  --muted2:    #9e7f7f;
+
+  /* Status colours */
+  --green:     #27ae60;
+  --amber:     #d68910;
+  --purple:    #7d3c98;
+
+  /* Layout */
+  --topbar-h:  52px;
+  --sidebar-w: 130px;
+  --paybar-h:  90px;
+  --tile-min:  88px;
+  --font-base: 15px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  font-size: var(--font-base);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── ROOT FLEX COLUMN ── */
+#root { display: flex; flex-direction: column; height: 100vh; width: 100%; }
+
+/* ════════════════════════════════════════
+   TOP BAR
+════════════════════════════════════════ */
+#topbar {
+  height: var(--topbar-h);
+  min-height: var(--topbar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+.logo {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--red-bright);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.date-str {
+  font-size: 12px;
+  color: var(--muted2);
+  white-space: nowrap;
+}
+.tab-group { display: flex; gap: 6px; }
+.tab-btn {
+  background: transparent;
+  border: 1.5px solid var(--border2);
+  color: var(--muted2);
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.tab-btn.active {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+/* ════════════════════════════════════════
+   MAIN ROW (sidebar + content)
+════════════════════════════════════════ */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ════════════════════════════════════════
+   LEFT SIDEBAR
+════════════════════════════════════════ */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border2);
+  overflow-y: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+#sidebar::-webkit-scrollbar { display: none; }
+
+.cat-btn {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted2);
+  padding: 0 8px;
+  height: 56px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+.cat-btn.active {
+  background: var(--red);
+  color: #fff;
+  font-weight: 700;
+}
+.cat-btn:not(.active):active { background: var(--surface3); }
+
+/* ════════════════════════════════════════
+   CONTENT AREA
+════════════════════════════════════════ */
+#content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.view { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
+.view.active { display: flex; }
+
+/* ════════════════════════════════════════
+   CATEGORY TITLE BAR
+════════════════════════════════════════ */
+#cat-title {
+  height: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  flex-shrink: 0;
+  letter-spacing: 0.2px;
+}
+
+/* ════════════════════════════════════════
+   ITEM GRID — 2-col Lightspeed style
+════════════════════════════════════════ */
+#item-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: var(--tile-min);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+}
+
+.item-tile {
+  background: var(--surface2);
+  border-right: 1px solid var(--border2);
+  border-bottom: 1px solid var(--border2);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.1s;
+  min-height: var(--tile-min);
+}
+.item-tile:active { background: var(--red-active); }
+.item-tile.has-qty { background: var(--surface3); }
+
+.tile-inner {
+  flex: 1;
+  padding: 12px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.tile-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+.tile-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted2);
+  margin-top: 6px;
+}
+/* The signature red bottom bar (was blue in Lightspeed) */
+.tile-bar {
+  height: 3px;
+  background: var(--red-bright);
+  width: 100%;
+  flex-shrink: 0;
+}
+/* Qty counter badge */
+.qty-badge {
+  position: absolute;
+  top: 7px; right: 7px;
+  background: var(--red-bright);
+  color: #fff;
+  border-radius: 50%;
+  width: 24px; height: 24px;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════
+   PAY BAR (bottom of order view)
+════════════════════════════════════════ */
+#pay-bar {
+  height: var(--paybar-h);
+  min-height: var(--paybar-h);
+  background: var(--surface);
+  border-top: 2px solid var(--border2);
+  padding: 8px 12px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+#order-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 22px;
+  overflow: hidden;
+  max-height: 28px;
+}
+.order-chip {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.chip-x {
+  color: var(--muted2);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 700;
+}
+#bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#total-display {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  min-width: 130px;
+}
+.pay-btns { display: flex; gap: 6px; flex: 1; }
+.pay-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: 8px;
+  border: none;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.15s;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.pay-btn:active { transform: scale(0.96); }
+.pay-btn:disabled { opacity: 0.28; }
+.pay-btn.cash  { background: #27ae60; color: #fff; }
+.pay-btn.card  { background: var(--red); color: #fff; }
+.pay-btn.free  { background: #7d3c98; color: #fff; }
+.pay-btn.later { background: #d68910; color: #fff; }
+
+/* ════════════════════════════════════════
+   KUCHEN PANEL — sibling of #item-grid
+════════════════════════════════════════ */
+#kuchen-panel {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+#kuchen-panel.active { display: flex; }
+
+.kuchen-form {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  flex-shrink: 0;
+  align-items: center;
+}
+.kuchen-form input {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 10px 11px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+.kuchen-form input:focus { border-color: var(--red-bright); }
+.kuchen-form input::placeholder { color: var(--muted); }
+.k-name  { flex: 2; }
+.k-price { width: 92px; }
+.k-add {
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#kuchen-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: var(--tile-min);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+}
+
+/* ════════════════════════════════════════
+   SUMMARY VIEW
+════════════════════════════════════════ */
+#summary-view { padding: 0; }
+
+.sum-hdr {
+  background: var(--surface);
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border2);
+  flex-shrink: 0;
+}
+.sum-hdr h2 {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.stat {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+.stat .sl {
+  font-size: 11px;
+  color: var(--muted2);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.stat .sv { font-size: 20px; font-weight: 800; }
+.sg { color: #2ecc71; }
+.sb { color: var(--red-bright); }
+.sa { color: #f0a500; }
+
+#tx-scroll { flex: 1; overflow-y: auto; padding: 12px 16px; min-height: 0; }
+
+.tx-sec {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted2);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin: 12px 0 6px;
+}
+.tx-row {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 7px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.tx-badge {
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.tx-badge.cash  { background: rgba(46,204,113,.15); color: #2ecc71; }
+.tx-badge.card  { background: rgba(231,76,60,.15);  color: #e74c3c; }
+.tx-badge.free  { background: rgba(155,89,182,.15); color: #9b59b6; }
+.tx-badge.later { background: rgba(240,165,0,.15);  color: #f0a500; }
+.tx-info { flex: 1; min-width: 0; }
+.tx-items { font-size: 14px; color: var(--muted2); line-height: 1.5; word-break: break-word; }
+.tx-cust  { font-size: 13px; color: #f0a500; margin-top: 4px; }
+.tx-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.tx-amt   { font-size: 16px; font-weight: 800; color: var(--text); }
+.tx-time  { font-size: 12px; color: var(--muted); }
+.tx-del {
+  margin-top: 4px;
+  background: rgba(231,76,60,0.12);
+  border: 1px solid rgba(231,76,60,0.25);
+  border-radius: 5px;
+  color: var(--red-bright);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.tx-del:active { background: rgba(231,76,60,0.28); }
+.tx-del.confirm-del {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.empty { text-align: center; padding: 50px 20px; color: var(--muted); font-size: 14px; }
+
+#reset-btn { display: none; } /* removed — auto-reset at midnight */
+
+/* ── SUMMARY TOOLBAR ── */
+#sum-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border2);
+  background: var(--surface);
+}
+.tool-btn {
+  flex: 1;
+  padding: 11px 8px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .1s, opacity .15s;
+}
+.tool-btn:active { transform: scale(.97); }
+.tool-btn.pdf-btn  { background: var(--red); color: #fff; }
+.tool-btn.hist-btn { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+
+/* ── HISTORY MODAL ── */
+#hist-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.78);
+  display: none; align-items: center; justify-content: center; z-index: 998;
+}
+#hist-overlay.open { display: flex; }
+.hist-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 22px;
+  width: 320px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hist-box h3 { font-size: 15px; font-weight: 800; color: var(--text); }
+#hist-date-list {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hist-date-row {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background .12s;
+}
+.hist-date-row:hover { background: var(--surface3); }
+.hist-date-lbl { font-size: 14px; font-weight: 600; color: var(--text); }
+.hist-date-sub { font-size: 12px; color: var(--muted2); margin-top: 2px; }
+
+/* ── SHARE PREVIEW MODAL ── */
+#share-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.85);
+  display: none; align-items: stretch; justify-content: center;
+  z-index: 1000;
+  flex-direction: column;
+}
+#share-overlay.open { display: flex; }
+#share-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  flex-shrink: 0;
+  gap: 10px;
+}
+#share-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.share-action-btn {
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.share-action-btn.do-share { background: var(--red); color: #fff; }
+.share-action-btn.do-close { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+#share-iframe {
+  flex: 1;
+  border: none;
+  background: #fff;
+  width: 100%;
+}
+.hist-dl-btn {
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.hist-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 20px 0; }
+.hist-close {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* ════════════════════════════════════════
+   PAY-LATER MODAL
+════════════════════════════════════════ */
+#modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+#modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 24px;
+  width: 300px;
+}
+.modal-box h3 { font-size: 15px; font-weight: 800; margin-bottom: 16px; color: var(--text); }
+.modal-box input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: var(--text);
+  font-size: 15px;
+  margin-bottom: 14px;
+  outline: none;
+}
+.modal-box input:focus { border-color: var(--red-bright); }
+.modal-row { display: flex; gap: 10px; }
+.modal-row button {
+  flex: 1; padding: 11px; border-radius: 8px;
+  border: none; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.m-cancel  { background: var(--surface2); color: var(--text); border: 1px solid var(--border2) !important; }
+.m-confirm { background: var(--amber); color: #fff; }
+
+/* ════════════════════════════════════════
+   TOAST
+════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 18px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 22px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 0.22s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 9999;
+  color: var(--text);
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="root">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="logo">☕ Café Atiq</div>
+    <div class="tab-group">
+      <button class="tab-btn active" onclick="showView('order',this)">Bestellung</button>
+      <button class="tab-btn" onclick="showView('summary',this)">Übersicht</button>
+    </div>
+    <div class="date-str" id="today-lbl"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar"></div>
+
+    <!-- CONTENT -->
+    <div id="content">
+
+      <!-- ── ORDER VIEW ── -->
+      <div id="order-view" class="view active">
+        <div id="cat-title">Frühstück</div>
+        <div id="item-grid"></div>
+        <div id="kuchen-panel">
+          <div class="kuchen-form">
+            <input class="k-name"  id="k-name"  type="text"   placeholder="Kuchenname…" />
+            <input class="k-price" id="k-price" type="number" placeholder="Preis €" step="0.10" min="0" />
+            <button class="k-add" onclick="addKuchenItem()">+ Hinzufügen</button>
+          </div>
+          <div id="kuchen-inner"></div>
+        </div>
+        <div id="pay-bar">
+          <div id="order-line">
+            <span style="font-size:12px;color:var(--muted)">Keine Artikel ausgewählt</span>
+          </div>
+          <div id="bottom-row">
+            <div id="total-display">Zahlen — € 0.00</div>
+            <div class="pay-btns">
+              <button class="pay-btn cash"  id="btn-cash"  onclick="pay('cash')"  disabled>💵 Bar</button>
+              <button class="pay-btn card"  id="btn-card"  onclick="pay('card')"  disabled>💳 Karte</button>
+              <button class="pay-btn free"  id="btn-free"  onclick="pay('free')"  disabled>🎁 Gratis</button>
+              <button class="pay-btn later" id="btn-later" onclick="openModal()"  disabled>⏳ Schulden</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUMMARY VIEW ── -->
+      <div id="summary-view" class="view">
+        <div class="sum-hdr">
+          <h2>Tagesübersicht</h2>
+          <div class="stats-grid">
+            <div class="stat"><div class="sl">Gesamtumsatz</div><div class="sv sg" id="st-total">€ 0.00</div></div>
+            <div class="stat"><div class="sl">Bar</div><div class="sv sg" id="st-cash">€ 0.00</div></div>
+            <div class="stat"><div class="sl">Karte</div><div class="sv sb" id="st-card">€ 0.00</div></div>
+            <div class="stat"><div class="sl">Ausstehend</div><div class="sv sa" id="st-later">€ 0.00</div></div>
+          </div>
+        </div>
+        <div id="tx-scroll"></div>
+        <div id="sum-toolbar">
+          <button class="tool-btn pdf-btn"  onclick="openShare('today')">👁 Vorschau & Teilen</button>
+          <button class="tool-btn hist-btn" onclick="openHist()">📅 Vergangene Tage</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SHARE PREVIEW MODAL -->
+<div id="share-overlay">
+  <div id="share-topbar">
+    <button class="share-action-btn do-close" onclick="closeShare()">✕ Zurück</button>
+    <div id="share-title">Tagesabrechnung</div>
+    <button class="share-action-btn do-share" onclick="doShare()">⬆ Teilen</button>
+  </div>
+  <iframe id="share-iframe"></iframe>
+</div>
+
+<!-- HISTORY MODAL -->
+<div id="hist-overlay">
+  <div class="hist-box">
+    <h3>📅 Gespeicherte Tage</h3>
+    <div id="hist-date-list"></div>
+    <button class="hist-close" onclick="closeHist()">Schließen</button>
+  </div>
+</div>
+
+<!-- PAY LATER MODAL -->
+<div id="modal-overlay">
+  <div class="modal-box">
+    <h3>Kundenname für Schulden</h3>
+    <input type="text" id="modal-input" placeholder="Name eingeben…" />
+    <div class="modal-row">
+      <button class="m-cancel"  onclick="closeModal()">Abbrechen</button>
+      <button class="m-confirm" onclick="confirmLater()">Bestätigen ⏳</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ── MENU DATA ────────────────────────────────── */
+const MENU = {
+  "Frühstück":[
+    {n:"Fatteh mit Butter & Nüssen",p:8.70}, {n:"Fatteh mit Olivenöl",p:7.70},
+    {n:"Foul mit Olivenöl",p:8.40},          {n:"Hummus mit Olivenöl",p:8.40},
+    {n:"Foul mit Joghurt",p:8.90},           {n:"Hummus mit Joghurt",p:8.90},
+    {n:"Msabbaha mit Butter & Nüssen",p:7.80},{n:"Kartoffel-Msabbaha",p:6.90},
+    {n:"Falafel-Teller",p:9.70},
+  ],
+  "Frühstücks Menüs":[
+    {n:"Atiq-Frühstück",p:13.50},
+    {n:"Klassik Frühstück",p:6.50},
+    {n:"Handwerker Frühstück",p:7.90},
+    {n:"Frühstück Spezial",p:9.50},
+    {n:"Power Frühstück",p:10.50},
+    {n:"Oriental Frühstück",p:11.50},
+  ],
+  "Sandwiches & Mahlzeiten":[
+    {n:"Falafel Baguette",p:7.00},           {n:"Falafel Saj-Brot",p:8.50},
+    {n:"Falafel Tortilla",p:7.00},           {n:"Falafel Weißbrot",p:6.50},
+    {n:"Pommes Baguette",p:7.00},            {n:"Pommes Saj-Brot",p:8.50},
+    {n:"Pommes Tortilla",p:7.00},            {n:"Pommes Weißbrot",p:6.50},
+    {n:"Cheese Fries Baguette",p:9.00},      {n:"Cheese Fries Saj-Brot",p:10.50},
+    {n:"Cheese Fries Tortilla",p:9.00},      {n:"Cheese Fries Weißbrot",p:8.50},
+    {n:"Falafel-Saj-Teller",p:11.50},        {n:"Pommes-Saj-Teller",p:11.50},
+    {n:"Falafel-Box",p:4.50},               {n:"Pommes-Box",p:4.50},
+  ],
+  "Vorspeisen & Salate":[
+    {n:"Veg. Damas-Köfte",p:6.00},   {n:"Linsensuppe",p:5.50},
+    {n:"Baba Ghannoush",p:6.00},     {n:"Avocado-Dip",p:6.00},
+    {n:"Auberginen mit Joghurt",p:6.00},{n:"Pommes-Frites Teller",p:7.00},
+    {n:"Beilagen Salat",p:4.50},     {n:"Fattoush",p:6.50},
+    {n:"Tabouleh",p:6.50},           {n:"Rote Bete & Rucola",p:6.50},
+    {n:"Kartoffelsalat",p:7.50},     {n:"Makdous-Salat",p:7.50},
+    {n:"Eiersalat",p:6.50},          {n:"Avocado-Rote-Bete-Salat",p:7.50},
+    {n:"Caesar-Salat",p:8.50},
+  ],
+  "Mittagessen":[
+    {n:"Kibbeh + Sambousek + Suppe",p:15.00},{n:"Kartoffelpfanne mit Hack",p:13.50},
+    {n:"Kebab Hindi",p:14.50},        {n:"Lammfleisch Sauerkirsch",p:14.50},
+    {n:"Basha mit Gefolge",p:15.00},  {n:"Ouzzi",p:13.50},
+    {n:"Cordon Bleu",p:13.50},
+  ],
+  "Saj & Crêpes":[
+    {n:"Saj Muhammara",p:5.50},              {n:"Saj Mozzarella",p:5.50},
+    {n:"Saj Muhammara + Mozz.",p:7.00},      {n:"Saj Schinken + Mozz.",p:7.50},
+    {n:"Saj Salami + Mozz.",p:7.50},         {n:"Saj Champignons + Mozz.",p:6.50},
+    {n:"Saj Salami + Schinken + Mozz.",p:9.00},{n:"Saj Atiq",p:8.50},
+    {n:"Saj Za'atar",p:5.50},               {n:"Saj Za'atar + Mozz.",p:7.00},
+    {n:"Saj Za'atar + Gemüse",p:6.50},      {n:"Saj nach Wahl",p:4.50},
+    {n:"Crêpe Muhammara",p:5.00},           {n:"Crêpe Mozzarella",p:5.00},
+    {n:"Crêpe Muhammara + Mozz.",p:6.50},   {n:"Crêpe Schinken + Mozz.",p:7.00},
+    {n:"Crêpe Salami + Mozz.",p:7.00},      {n:"Crêpe Champignons + Mozz.",p:6.00},
+    {n:"Crêpe Salami + Schinken + Mozz.",p:8.50},{n:"Crêpe Atiq",p:8.00},
+    {n:"Crêpe Za'atar",p:5.00},             {n:"Crêpe Za'atar + Mozz.",p:6.50},
+    {n:"Crêpe Za'atar + Gemüse",p:6.00},    {n:"Crêpe nach Wahl",p:4.00},
+    {n:"Flammkuchen",p:7.50},
+    {n:"Crêpe Fettuccine Hähnchen",p:12.00},{n:"Crêpe Fettuccine Tomate",p:9.50},
+    {n:"Crêpe Fettuccine Gorgonzola",p:11.50},
+    {n:"Extra Aufschnitt",p:2.00},          {n:"Extra Gemüse",p:1.00},
+    {n:"Extra Käse",p:1.00},
+  ],
+  "Desserts":[
+    {n:"Mahalaya",p:5.50},              {n:"Halawat al-Jibn (4 St.)",p:6.00},
+    {n:"Harissa (4 St.)",p:6.50},       {n:"Baklava (1 St.)",p:2.00},
+    {n:"Eis Damaskus",p:5.20},          {n:"Caseta-Eis",p:5.90},
+    {n:"Süße Crêpes (2 St.)",p:8.50},   {n:"Crêpe-Sandwich (2 St.)",p:7.00},
+  ],
+  "Café Atiq":[
+    {n:"Atiq-Sandkaffee",p:3.70},   {n:"Espresso",p:2.30},
+    {n:"Espresso Doppio",p:2.90},   {n:"Espresso Macchiato",p:3.50},
+    {n:"Cappuccino",p:3.50},        {n:"Kaffee",p:2.60},
+    {n:"Koffeinfreier Kaffee",p:2.60},{n:"Latte Macchiato",p:3.50},
+    {n:"Milchkaffee",p:3.50},       {n:"Nutella-Kaffee",p:4.90},
+    {n:"Ice Coffee",p:4.90},        {n:"After Eight Latte",p:4.50},
+    {n:"Atiq-Tee",p:2.30},          {n:"Schwarzer Tee",p:3.50},
+    {n:"Grüner Tee",p:3.50},        {n:"Aromatisierter Tee",p:3.50},
+    {n:"Mate-Tee",p:2.70},          {n:"Heiße Schokolade",p:4.90},
+  ],
+  "Getränke":[
+    {n:"Coca Cola 0,33L",p:3.50},            {n:"Coca Cola 0,50L",p:4.50},
+    {n:"Coca Cola Light 0,33L",p:3.50},      {n:"Coca Cola Light 0,50L",p:4.50},
+    {n:"Coca Cola Zero 0,33L",p:3.50},       {n:"Coca Cola Zero 0,50L",p:4.50},
+    {n:"Fanta Orange 0,33L",p:3.50},         {n:"Fanta Orange 0,50L",p:4.50},
+    {n:"Sprite 0,33L",p:3.50},               {n:"Sprite 0,50L",p:4.50},
+    {n:"Mezzo Mix 0,33L",p:3.50},            {n:"Mezzo Mix 0,50L",p:4.50},
+    {n:"Bitter Lemon 0,20L",p:3.50},
+    {n:"Ginger Ale 0,20L",p:3.50},
+    {n:"Tonic Water 0,20L",p:3.50},
+    {n:"Aqua Minerale 0,25L",p:3.50},        {n:"Aqua Minerale 0,75L",p:5.90},
+    {n:"Aqua Naturale 0,25L",p:3.50},        {n:"Aqua Naturale 0,75L",p:5.90},
+    {n:"Mineralwasser 0,33L",p:2.00},
+    {n:"Apfelschorle 0,33L",p:3.90},
+    {n:"Johannisbeerschorle 0,33L",p:3.90},
+    {n:"Maracujaschorle 0,33L",p:3.90},
+    {n:"Fritz Rhabarber 0,33L",p:3.90},
+    {n:"Basil Soda Libre 0,33L",p:3.90},
+    {n:"Maracujasaft 0,30L",p:3.90},
+    {n:"Apfelsaft 0,30L",p:3.90},
+    {n:"Ananassaft 0,30L",p:3.90},
+    {n:"Bananennektar 0,30L",p:3.90},
+    {n:"Orangensaft 0,30L",p:3.90},
+    {n:"Ayran",p:3.00},
+    {n:"Tamarhindi",p:3.00},
+    {n:"Bier 0% Alkohol",p:3.90},
+  ],
+  "Besondere Getränke":[
+    {n:"Polo-Saft (Zitrone & Minze)",p:5.00},
+    {n:"Brasilianische Limonade",p:5.00},
+    {n:"Atiq-Saft (Erdbeere & Minze)",p:5.00},
+    {n:"Milchshake Banane",p:5.90},
+    {n:"Milchshake Erdbeere",p:5.90},
+    {n:"Milchshake Banane & Erdbeere",p:5.90},
+    {n:"Milchshake Vanille",p:5.90},
+    {n:"Milchshake Himbeere",p:5.90},
+    {n:"Milchshake Schokolade",p:5.90},
+    {n:"Milchshake Lotus",p:5.90},
+    {n:"Milchshake Oreo",p:5.90},
+  ],
+  "Kuchen": [],
+};
+
+/* ── STATE ────────────────────────────────────── */
+let activeCat   = "Frühstück";
+let cart        = {};
+let txs         = JSON.parse(localStorage.getItem('atiq_txs')    || '[]');
+let kuchenItems = JSON.parse(localStorage.getItem('atiq_kuchen') || '[]');
+MENU["Kuchen"]  = kuchenItems;
+
+/* ── HELPERS ──────────────────────────────────── */
+const fmt    = v => '€ ' + Number(v).toFixed(2);
+const fmtN   = v => Number(v).toFixed(2);
+const nowT   = () => { const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+const esc    = s => s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+const total  = () => Object.entries(cart).reduce((s,[k,q])=>{
+  const it = Object.values(MENU).flat().find(i=>i.n===k);
+  return s + (it ? it.p*q : 0);
+}, 0);
+
+/* ── SIDEBAR ──────────────────────────────────── */
+function buildSidebar(){
+  document.getElementById('sidebar').innerHTML =
+    Object.keys(MENU).map(cat =>
+      `<button class="cat-btn${cat===activeCat?' active':''}" onclick="setCat('${esc(cat)}')">${cat}</button>`
+    ).join('');
+}
+
+/* ── SET CATEGORY ─────────────────────────────── */
+function setCat(cat){
+  activeCat = cat;
+  buildSidebar();
+  document.getElementById('cat-title').textContent = cat;
+  buildItemGrid();
+}
+
+/* ── ITEM GRID ────────────────────────────────── */
+function buildItemGrid(){
+  const grid   = document.getElementById('item-grid');
+  const kpanel = document.getElementById('kuchen-panel');
+
+  if(activeCat === 'Kuchen'){
+    grid.style.display   = 'none';
+    kpanel.classList.add('active');
+    buildKuchenInner();
+    return;
+  }
+
+  kpanel.classList.remove('active');
+  grid.style.display = '';   /* restore grid display */
+
+  const items = MENU[activeCat] || [];
+  grid.innerHTML = items.map(item => {
+    const qty = cart[item.n] || 0;
+    return `<div class="item-tile${qty?' has-qty':''}" onclick="addToCart('${esc(item.n)}')">
+      <div class="tile-inner">
+        <div class="tile-name">${item.n}</div>
+        <div class="tile-price">${fmt(item.p)}</div>
+      </div>
+      <div class="tile-bar"></div>
+      ${qty ? `<div class="qty-badge">${qty}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ── KUCHEN INNER GRID ────────────────────────── */
+function buildKuchenInner(){
+  const g = document.getElementById('kuchen-inner');
+  if(!g) return;
+  const items = MENU['Kuchen'];
+  if(!items.length){
+    g.innerHTML = `<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--muted);font-size:14px;">
+      Noch keine Artikel.<br>Oben Namen und Preis eingeben.
+    </div>`;
+    return;
+  }
+  g.innerHTML = items.map(item => {
+    const qty = cart[item.n] || 0;
+    return `<div class="item-tile${qty?' has-qty':''}" onclick="addToCart('${esc(item.n)}')">
+      <div class="tile-inner">
+        <div class="tile-name">${item.n}</div>
+        <div class="tile-price">${fmt(item.p)}</div>
+      </div>
+      <div class="tile-bar"></div>
+      ${qty ? `<div class="qty-badge">${qty}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function addKuchenItem(){
+  const nameEl  = document.getElementById('k-name');
+  const priceEl = document.getElementById('k-price');
+  const name    = nameEl.value.trim();
+  const price   = parseFloat(priceEl.value);
+  if(!name)                { showToast('Bitte Namen eingeben'); return; }
+  if(isNaN(price)||price<=0){ showToast('Bitte gültigen Preis eingeben'); return; }
+  const item = { n: name, p: parseFloat(price.toFixed(2)) };
+  MENU['Kuchen'].push(item);
+  kuchenItems.push(item);
+  localStorage.setItem('atiq_kuchen', JSON.stringify(kuchenItems));
+  nameEl.value = ''; priceEl.value = '';
+  buildKuchenInner();
+  showToast('✓ ' + name + ' gespeichert');
+}
+
+/* ── CART ─────────────────────────────────────── */
+function addToCart(name){
+  cart[name] = (cart[name]||0) + 1;
+  updateCartUI();
+  if(activeCat==='Kuchen') buildKuchenInner();
+  else buildItemGrid();
+}
+
+function removeFromCart(name){
+  if(!cart[name]) return;
+  cart[name]--;
+  if(cart[name] <= 0) delete cart[name];
+  updateCartUI();
+  if(activeCat==='Kuchen') buildKuchenInner();
+  else buildItemGrid();
+}
+
+function updateCartUI(){
+  const t = total();
+  const has = Object.keys(cart).length > 0;
+  document.getElementById('total-display').textContent = 'Zahlen — € ' + fmtN(t);
+  const line = document.getElementById('order-line');
+  if(!has){
+    line.innerHTML = '<span style="font-size:12px;color:var(--muted)">Keine Artikel ausgewählt</span>';
+  } else {
+    line.innerHTML = Object.entries(cart).map(([name,qty]) =>
+      `<div class="order-chip">
+        <span>${qty}× ${name}</span>
+        <span class="chip-x" onclick="removeFromCart('${esc(name)}')">✕</span>
+       </div>`
+    ).join('');
+  }
+  ['btn-cash','btn-card','btn-free','btn-later'].forEach(id => {
+    document.getElementById(id).disabled = !has;
+  });
+}
+
+/* ── PAYMENT ──────────────────────────────────── */
+function pay(type){
+  if(!Object.keys(cart).length) return;
+  const t = total();
+  txs.push({
+    id: Date.now(), time: nowT(), type,
+    items: Object.entries(cart).map(([n,q]) => `${q}× ${n}`).join(', '),
+    amount: parseFloat(t.toFixed(2)), customer: null
+  });
+  saveTx();
+  const lbl = {cash:'Bar',card:'Karte',free:'Gratis',later:'Schulden'};
+  showToast('✓ ' + lbl[type] + ' — ' + fmt(t));
+  clearCart();
+}
+
+function openModal(){
+  if(!Object.keys(cart).length) return;
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('modal-input').focus(), 120);
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+function confirmLater(){
+  const name = document.getElementById('modal-input').value.trim() || 'Unbekannt';
+  closeModal();
+  const t = total();
+  txs.push({
+    id: Date.now(), time: nowT(), type: 'later',
+    items: Object.entries(cart).map(([n,q]) => `${q}× ${n}`).join(', '),
+    amount: parseFloat(t.toFixed(2)), customer: name
+  });
+  saveTx();
+  showToast('⏳ Schulden: ' + name);
+  clearCart();
+}
+
+function clearCart(){ cart = {}; updateCartUI(); buildItemGrid(); }
+
+/* ── STORAGE ──────────────────────────────────── */
+function saveTx(){
+  // Always save with today's date key AND as the live 'today' buffer
+  const key = 'atiq_txs';
+  localStorage.setItem(key, JSON.stringify(txs));
+  // Also archive under date key so history survives the midnight wipe
+  const dateKey = 'atiq_day_' + todayKey();
+  localStorage.setItem(dateKey, JSON.stringify({ date: todayKey(), txs }));
+}
+
+function todayKey(){
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+}
+
+function fmtDateKey(k){
+  // k = "2025-12-24"
+  const [y,m,d] = k.split('-');
+  const dt = new Date(+y, +m-1, +d);
+  return dt.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+/* ── MIDNIGHT AUTO-RESET ──────────────────────── */
+function scheduleReset(){
+  const now  = new Date();
+  const next = new Date(now);
+  next.setHours(24,0,5,0); // 00:00:05 next day
+  const ms = next - now;
+  setTimeout(() => {
+    archiveAndReset();
+    scheduleReset(); // re-arm for next midnight
+  }, ms);
+}
+
+function archiveAndReset(){
+  // Save current day to archive before wiping
+  if(txs.length){
+    const dateKey = 'atiq_day_' + todayKey();
+    localStorage.setItem(dateKey, JSON.stringify({ date: todayKey(), txs: [...txs] }));
+  }
+  txs = [];
+  localStorage.setItem('atiq_txs', JSON.stringify(txs));
+  buildSummary();
+  showToast('Neuer Tag — Daten gespeichert');
+}
+
+/* ── SUMMARY ──────────────────────────────────── */
+function buildSummary(data){
+  const list = data || txs;
+  const cashT  = list.filter(t=>t.type==='cash').reduce((s,t)=>s+t.amount,0);
+  const cardT  = list.filter(t=>t.type==='card').reduce((s,t)=>s+t.amount,0);
+  const laterT = list.filter(t=>t.type==='later').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('st-total').textContent = fmt(cashT+cardT);
+  document.getElementById('st-cash').textContent  = fmt(cashT);
+  document.getElementById('st-card').textContent  = fmt(cardT);
+  document.getElementById('st-later').textContent = fmt(laterT);
+
+  const scroll = document.getElementById('tx-scroll');
+  if(!list.length){ scroll.innerHTML = '<div class="empty">Noch keine Transaktionen heute.</div>'; return; }
+
+  const secs = [
+    { key:'later', label:`⏳ Ausstehend (${list.filter(t=>t.type==='later').length})` },
+    { key:'cash',  label:`💵 Bar (${list.filter(t=>t.type==='cash').length})` },
+    { key:'card',  label:`💳 Karte (${list.filter(t=>t.type==='card').length})` },
+    { key:'free',  label:`🎁 Gratis (${list.filter(t=>t.type==='free').length})` },
+  ];
+  let html = '';
+  secs.forEach(sec => {
+    const grp = list.filter(t=>t.type===sec.key).slice().reverse();
+    if(!grp.length) return;
+    html += `<div class="tx-sec">${sec.label}</div>`;
+    grp.forEach(tx => {
+      const lbl = {cash:'Bar',card:'Karte',free:'Gratis',later:'Schulden'}[tx.type];
+      html += `<div class="tx-row" id="tx-${tx.id}">
+        <div class="tx-badge ${tx.type}">${lbl}</div>
+        <div class="tx-info">
+          <div class="tx-items">${tx.items}</div>
+          ${tx.customer ? `<div class="tx-cust">👤 ${tx.customer}</div>` : ''}
+        </div>
+        <div class="tx-right">
+          <div class="tx-amt">${fmt(tx.amount)}</div>
+          <div class="tx-time">${tx.time}</div>
+          <button class="tx-del" onclick="deleteTx(${tx.id}, this)">🗑 Löschen</button>
+        </div>
+      </div>`;
+    });
+  });
+  scroll.innerHTML = html;
+}
+
+/* ── DELETE TRANSACTION ───────────────────────── */
+function deleteTx(id, btn){
+  // First tap: turn button red and ask for confirmation
+  if(!btn.classList.contains('confirm-del')){
+    btn.classList.add('confirm-del');
+    btn.textContent = '✓ Bestätigen?';
+    // Auto-cancel confirmation after 3 seconds if user doesn't tap again
+    btn._cancelTimer = setTimeout(() => {
+      btn.classList.remove('confirm-del');
+      btn.textContent = '🗑 Löschen';
+    }, 3000);
+    return;
+  }
+  // Second tap: actually delete
+  clearTimeout(btn._cancelTimer);
+  txs = txs.filter(t => t.id !== id);
+  saveTx();
+  // Animate row out then rebuild
+  const row = document.getElementById('tx-' + id);
+  if(row){
+    row.style.transition = 'opacity 0.2s, transform 0.2s';
+    row.style.opacity = '0';
+    row.style.transform = 'translateX(30px)';
+    setTimeout(() => buildSummary(), 220);
+  } else {
+    buildSummary();
+  }
+  showToast('Transaktion gelöscht');
+}
+let _shareBlobUrl = null;
+let _shareFilename = '';
+
+function openShare(dateKeyOrToday, label){
+  const list   = dateKeyOrToday === 'today' ? txs : getArchive(dateKeyOrToday);
+  const title  = label || ('Tagesabrechnung — ' + new Date().toLocaleDateString('de-DE'));
+  const cashT  = list.filter(t=>t.type==='cash').reduce((s,t)=>s+t.amount,0);
+  const cardT  = list.filter(t=>t.type==='card').reduce((s,t)=>s+t.amount,0);
+  const laterT = list.filter(t=>t.type==='later').reduce((s,t)=>s+t.amount,0);
+
+  const typeLabel = {cash:'Bar',card:'Karte',free:'Gratis',later:'Schulden'};
+  const rows = list.map(tx =>
+    `<tr>
+      <td>${tx.time}</td>
+      <td><span class="b-${tx.type}">${typeLabel[tx.type]}</span></td>
+      <td>${tx.items}${tx.customer?' ('+tx.customer+')':''}</td>
+      <td style="text-align:right;font-weight:700">${fmt(tx.amount)}</td>
+    </tr>`
+  ).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${title}</title>
+  <style>
+    *{box-sizing:border-box;}
+    body{font-family:-apple-system,Helvetica,sans-serif;font-size:14px;color:#1a1a1a;padding:28px 32px;max-width:720px;margin:0 auto;}
+    h1{font-size:22px;font-weight:800;margin-bottom:4px;color:#c0392b;}
+    .sub{font-size:13px;color:#666;margin-bottom:22px;}
+    .stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:26px;}
+    .stat{background:#f7f7f7;border-radius:9px;padding:11px 14px;}
+    .stat .l{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#999;margin-bottom:3px;}
+    .stat .v{font-size:19px;font-weight:800;}
+    .v-g{color:#27ae60;}.v-b{color:#2980b9;}.v-a{color:#d68910;}
+    table{width:100%;border-collapse:collapse;}
+    th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#999;text-align:left;padding:7px 8px;border-bottom:2px solid #eee;}
+    td{padding:9px 8px;border-bottom:1px solid #f2f2f2;font-size:13px;vertical-align:top;}
+    tr:last-child td{border-bottom:none;}
+    .b-cash{background:#e8f8f0;color:#27ae60;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap;}
+    .b-card{background:#eaf2fb;color:#2980b9;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap;}
+    .b-free{background:#f5eef8;color:#7d3c98;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap;}
+    .b-later{background:#fef9e7;color:#d68910;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap;}
+    .footer{margin-top:28px;font-size:11px;color:#bbb;text-align:center;padding-top:16px;border-top:1px solid #eee;}
+    .no-tx{text-align:center;color:#bbb;padding:24px;font-size:13px;}
+  </style></head><body>
+  <h1>☕ Café Atiq</h1>
+  <div class="sub">${title}</div>
+  <div class="stats">
+    <div class="stat"><div class="l">Umsatz gesamt</div><div class="v v-g">${fmt(cashT+cardT)}</div></div>
+    <div class="stat"><div class="l">Bar</div><div class="v v-g">${fmt(cashT)}</div></div>
+    <div class="stat"><div class="l">Karte</div><div class="v v-b">${fmt(cardT)}</div></div>
+    <div class="stat"><div class="l">Ausstehend</div><div class="v v-a">${fmt(laterT)}</div></div>
+  </div>
+  <table>
+    <thead><tr><th>Zeit</th><th>Typ</th><th>Artikel</th><th style="text-align:right">Betrag</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="4" class="no-tx">Keine Transaktionen</td></tr>'}</tbody>
+  </table>
+  <div class="footer">Erstellt: ${new Date().toLocaleString('de-DE')} · Café Atiq Tagesabrechnung</div>
+  </body></html>`;
+
+  // Revoke previous blob if any
+  if(_shareBlobUrl) URL.revokeObjectURL(_shareBlobUrl);
+  const blob = new Blob([html], {type:'text/html'});
+  _shareBlobUrl  = URL.createObjectURL(blob);
+  _shareFilename = 'cafe-atiq-' + (dateKeyOrToday==='today' ? todayKey() : dateKeyOrToday) + '.html';
+
+  // Load into iframe for preview
+  document.getElementById('share-iframe').src = _shareBlobUrl;
+  document.getElementById('share-title').textContent = title;
+  document.getElementById('share-overlay').classList.add('open');
+}
+
+async function doShare(){
+  if(!_shareBlobUrl) return;
+  // Re-fetch blob content as a File for Web Share API
+  try {
+    const resp = await fetch(_shareBlobUrl);
+    const blob = await resp.blob();
+    const file = new File([blob], _shareFilename, {type:'text/html'});
+
+    // Web Share API — triggers native iOS share sheet (WhatsApp, Mail, AirDrop, Files…)
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({
+        title: document.getElementById('share-title').textContent,
+        files: [file]
+      });
+      showToast('Erfolgreich geteilt');
+    } else {
+      // Fallback for desktop browsers — direct download
+      const a = document.createElement('a');
+      a.href = _shareBlobUrl;
+      a.download = _shareFilename;
+      a.click();
+      showToast('Datei wird heruntergeladen…');
+    }
+  } catch(e){
+    if(e.name !== 'AbortError') showToast('Teilen fehlgeschlagen');
+  }
+}
+
+function closeShare(){
+  document.getElementById('share-overlay').classList.remove('open');
+  document.getElementById('share-iframe').src = '';
+}
+
+function getArchive(dateKey){
+  const raw = localStorage.getItem('atiq_day_' + dateKey);
+  if(!raw) return [];
+  try { return JSON.parse(raw).txs || []; } catch { return []; }
+}
+
+function allArchiveKeys(){
+  const keys = [];
+  for(let i=0; i<localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('atiq_day_')) keys.push(k.replace('atiq_day_',''));
+  }
+  return keys.sort().reverse(); // most recent first
+}
+
+/* ── HISTORY MODAL ────────────────────────────── */
+function openHist(){
+  const keys = allArchiveKeys();
+  const list = document.getElementById('hist-date-list');
+  if(!keys.length){
+    list.innerHTML = '<div class="hist-empty">Noch keine archivierten Tage vorhanden.</div>';
+  } else {
+    list.innerHTML = keys.map(k => {
+      const arc  = getArchive(k);
+      const cash = arc.filter(t=>t.type==='cash').reduce((s,t)=>s+t.amount,0);
+      const card = arc.filter(t=>t.type==='card').reduce((s,t)=>s+t.amount,0);
+      return `<div class="hist-date-row">
+        <div>
+          <div class="hist-date-lbl">${fmtDateKey(k)}</div>
+          <div class="hist-date-sub">${arc.length} Transaktionen · ${fmt(cash+card)}</div>
+        </div>
+        <button class="hist-dl-btn" onclick="closeHist();openShare('${k}','Tagesabrechnung — ${fmtDateKey(k)}');event.stopPropagation()">👁 Öffnen</button>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('hist-overlay').classList.add('open');
+}
+function closeHist(){ document.getElementById('hist-overlay').classList.remove('open'); }
+
+/* ── VIEW SWITCH ──────────────────────────────── */
+function showView(v, btn){
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(v+'-view').classList.add('active');
+  btn.classList.add('active');
+  if(v==='summary') buildSummary();
+  if(v==='order'){ buildSidebar(); setCat(activeCat); }
+}
+
+/* ── TOAST ────────────────────────────────────── */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ── INIT ─────────────────────────────────────── */
+document.getElementById('today-lbl').textContent =
+  new Date().toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+document.getElementById('modal-input').addEventListener('keydown', e => {
+  if(e.key==='Enter') confirmLater();
+});
+
+// Archive today's data on load (in case of missed midnight while app was closed)
+(function checkMissedReset(){
+  const lastKey  = localStorage.getItem('atiq_last_date');
+  const todayK   = todayKey();
+  if(lastKey && lastKey !== todayK && txs.length){
+    // App opened on a new day — archive previous day's data first
+    localStorage.setItem('atiq_day_' + lastKey, JSON.stringify({ date: lastKey, txs: [...txs] }));
+    txs = [];
+    localStorage.setItem('atiq_txs', JSON.stringify(txs));
+  }
+  localStorage.setItem('atiq_last_date', todayK);
+})();
+
+scheduleReset();
+buildSidebar();
+buildItemGrid();
+updateCartUI();
+</script>
+</body>
+</html>
